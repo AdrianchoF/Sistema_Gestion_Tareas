@@ -38,6 +38,7 @@ class Config {
         };
     }
 
+    /** Devuelve la única instancia de Config, creándola si no existe. */
     public static getInstance(): Config {
         if (!Config.instance) {
             Config.instance = new Config();
@@ -45,6 +46,7 @@ class Config {
         return Config.instance;
     }
 
+    /** Lee una variable obligatoria; si falta, detiene el arranque con un error claro. */
     private static required(name: string): string {
         const value = process.env[name];
         if (!value) {
