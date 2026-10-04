@@ -4,6 +4,8 @@ import { testConnect } from './persistence/db';
 import authRoutes from './api/routes/authRoutes';
 import { errorHandler } from './api/middlewares/errorHandler';
 import taskRoutes from './api/routes/taskRoutes';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './docs/swagger';
 // import { createUser, findUserByEmail } from './persistence/userRepository';
 
 const app = express();
@@ -15,7 +17,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
-
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(errorHandler);
 
 async function start() {
