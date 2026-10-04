@@ -8,9 +8,6 @@
 - **Qué se rechazó o modificó y por qué:** El `tsconfig.json` generado por `tsc --init` traía opciones que no encajaban con el proyecto: `types: []` (impedía reconocer `process` y `console`), `verbatimModuleSyntax` y `jsx` (...escribe aquí el motivo con tus palabras). Se ajustaron siguiendo la recomendación de la IA. Mi `.gitignore` inicial usaba `*.env`; (indica si adoptaste la mejora `.env.*` + `!.env.example` y por qué).
 - **Verificación realizada:** `npx tsc --noEmit` sin errores una vez existió `src/index.ts`, `/health` respondiendo correctamente y `git status` sin `node_modules`.
 
-### Decisiones sin asistencia de IA
-(Se completará durante el desarrollo, con decisiones reales de diseño y codificación.)
-
 ## Retos y Soluciones
 - **Reto:** PostgreSQL quedó instalado pero `psql` no se reconocía. **Solución:** Se resolvio agregando la carpeta bin de PostgreSQL al PATH de las varibles de entorno del sistema.
 - **Reto:** Error TS18003 ("No inputs were found"). **Solución:** Era esperable porque `src` no tenía archivos `.ts`; desapareció al crear `src/index.ts`.
@@ -38,3 +35,18 @@
 
 - **Reto:** `npm run dev` levantaba el servidor sin mostrar nada de la base de datos. **Solución:** `index.ts` nunca importaba `db.ts`, así que ese archivo no se ejecutaba. Se resolvió importando `testConnect` y llamándola con `await` dentro de una función `start()`, antes de `app.listen`.
 - **Reto:** Errores de importación y de export de `config`. **Solución:** había pegado la clase `Config` dentro de `index.ts` y usaba rutas relativas incorrectas. Separé cada responsabilidad en su archivo (`config/index.ts`, `persistence/db.ts`, `index.ts`) y entendí que la ruta de un import es relativa al archivo donde se escribe.
+
+### 4. Capa de persistencia de usuarios
+- **Prompt utilizado:** Pedí guía para crear el repositorio de usuarios. Envié mi código y pregunté: "Esta bien asi? o que le corrijo? si esta bien como puedo probarlo, desde donde?". Después compartí el error de sintaxis que me salió al probarlo.
+- **Qué se aceptó y por qué:** El uso de consultas parametrizadas (`$1`, `$2`, `$3`) para evitar inyección SQL, la cláusula `RETURNING` para obtener el usuario creado y la idea de probar desde `start()` de forma temporal. Escribí yo las dos funciones (`createUser` y `findUserByEmail`) y las consultas.
+- **Qué se rechazó o modificó y por qué:** Mi primera versión devolvía todas las columnas con `RETURNING *`, incluida la contraseña; la cambié por una lista explícita de columnas. Escribí los corchetes `[ ]` dentro del `RETURNING`, que es sintaxis de JavaScript y no de SQL; PostgreSQL dio error de sintaxis y lo corregí. Cambié el tipo de retorno a `Omit<User, 'contrasena'>` porque ya no se devuelve ese campo. Añadí `export` a las funciones.
+- **Verificación realizada:** Creé un usuario de prueba y lo busqué por correo; comprobé la fila en pgAdmin. Después eliminé el código de prueba y el usuario.
+
+### 5. Registro, login, JWT, errores centralizados y middleware de autenticación
+- **Prompt utilizado:** "Listo ya funciona todo, solo tengo un error en authService.ts [...]" y, antes, mi aviso de que el repositorio funcionaba. Por el poco tiempo disponible, pedí que la IA entregara los bloques completos.
+- **Qué se aceptó y por qué:** Las clases de error personalizadas, el middleware de errores, `authService`, `authController`, las rutas de autenticación y el middleware `authenticate`. Todo este bloque lo generó la IA; yo lo leí, analice, copié, lo integré en `index.ts` y lo probé. Lo acepté porque separa responsabilidades en capas, no guarda contraseñas en texto plano, usa un mensaje genérico en el login y fija el algoritmo HS256 al verificar el token.
+- **Qué se rechazó o modificó y por qué:** Se modifico solo temas de indexación porque el codigó que genero la IA estaba mal identado e incluso generaba errores por la mala identación.
+- **Verificación realizada:** Probé en [Thunder Client]: registro (201), registro duplicado (409), login correcto con token (200) y contraseña incorrecta (401). En pgAdmin comprobé que la contraseña guardada es un hash que empieza por `$2b$`.
+
+- **Reto:** Error `RETURNING [id, ...]` con sintaxis de arreglo en una consulta SQL. **Solución:** En SQL las columnas se separan con comas, sin corchetes.
+- **Reto:** Error TS4058 en `authService.ts` ("Return type of exported function has or is using name 'User'... cannot be named"). **Solución:** Con `declaration: true`, TypeScript necesita que los tipos usados en funciones exportadas también estén exportados. Exporté la interfaz `User` y anoté explícitamente los tipos de retorno.

@@ -3,6 +3,7 @@ import { config } from './config';
 import { testConnect } from './persistence/db';
 import authRoutes from './api/routes/authRoutes';
 import { errorHandler } from './api/middlewares/errorHandler';
+import taskRoutes from './api/routes/taskRoutes';
 // import { createUser, findUserByEmail } from './persistence/userRepository';
 
 const app = express();
@@ -13,6 +14,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/auth', authRoutes);
+app.use('/tasks', taskRoutes);
 
 app.use(errorHandler);
 
